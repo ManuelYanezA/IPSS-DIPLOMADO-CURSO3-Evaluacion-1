@@ -18,7 +18,11 @@ import { continentes, grupos, selecciones, partidos } from './datos-mundial.js'
 // TODO: importa express y crea tu app.
 //
 import express from 'express'
+import cors from 'cors'
 const app = express()
+app.use(cors({
+  methods: ['GET', 'POST', 'PUT', 'DELETE']
+})) // Middleware para habilitar CORS
 app.use(express.json()) // Middleware para leer el cuerpo de los POST
 //
 // Recuerda el middleware que hace falta para leer el cuerpo de los POST,
@@ -114,7 +118,7 @@ app.get('/api/selecciones', (req, res) => {
   } else if (campeon) {
     return res.status(400).json({
         error: `El valor '${campeon}' no es válido. Debe ser 'true' o 'false'.`
-    });
+    })
 }
 
 if(resultado.length === 0) {
@@ -149,9 +153,103 @@ app.get('/api/copas/:seleccion', (req, res) => {
     });
   }
 
-  res.status(200).json(seleccionObj.copas);
+  res.status(200).json(seleccionObj.copas)
 
-});
+})
 
 // TODO: Rutas de semifinales y final (Punto 4 del enunciado).
 
+// 1) POST /api/worldcup/2026/semifinals/:n
+app.post('/api/worldcup/2026/semifinals/:n', (req, res) => {
+    // Obtener el número de semifinal desde la URL, se parsea a número para poder compararlo
+    const numero = Number(req.params.n)
+
+    // Obtener los datos enviados en el body
+    const { local, visita } = req.body
+
+    // Validar que n esté entre 1 y 4
+    if (numero < 1 || numero > 4) {
+        return res.status(400).json({
+            error: "El número de semifinal debe estar entre 1 y 4."
+        })
+    }
+
+    // Validar que existan los datos necesarios
+    if (!local || !visita) {
+        return res.status(400).json({
+            error: "Debe enviar los equipos local y visita."
+        })
+    }
+
+    // Crear el partido
+    const partido = {
+        numero,
+        local,
+        visita
+    }
+
+    // Guardarlo en memoria
+    partidos.semifinales.push(partido)
+
+    // Responder
+    res.status(201).json(partido)
+})
+
+
+// 2) GET /api/worldcup/2026/semifinals/:n
+app.get('/api/worldcup/2026/semifinals/:n', (req, res) => {
+  let resultado = partidos.semifinales
+
+  if (req.params.n) {
+    const numero = Number(req.params.n)
+    if(numero < 1 || numero > 4) {
+      return res.status(400).json({ error: "El número de semifinal debe estar entre 1 y 4." })
+    }
+    resultado = partidos.semifinales.find(p => p.numero === numero)
+    if (resultado) {
+      return res.status(200).json(resultado)
+    } else {
+      return res.status(404).json({ error: "Partido no encontrado" })
+    }
+  } else {
+    return res.status(404).json({ error: "No se detecta número a seleccionar en la ruta" })
+  }
+})
+
+// 3) GET /api/worldcup/2026/semifinals
+app.get('/api/worldcup/2026/semifinals', (req, res) => {
+  res.status(200).json(partidos.semifinales)
+})
+
+// 4) POST /api/worldcup/2026/final
+app.post('/api/worldcup/2026/final', (req, res) => {
+  const { local, visita } = req.body
+
+  // Validar que existan los datos necesarios
+  if (!local || !visita) {
+    return res.status(400).json({
+        error: "Debe enviar los equipos local y visita."
+    })
+  }
+
+  // Crear el partido
+  const partido = {
+    local,
+    visita
+  }
+
+  // Guardarlo en memoria
+  partidos.final = partido
+
+  // Responder
+  res.status(201).json(partido)
+})
+
+// 5) GET /api/worldcup/2026/final
+app.get('/api/worldcup/2026/final', (req, res) => {
+  if (partidos.final) {
+    return res.status(200).json(partidos.final)
+  } else {
+    return res.status(404).json({ error: "Partido no encontrado" })
+  }
+})
