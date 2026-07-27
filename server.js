@@ -17,8 +17,9 @@ import { continentes, grupos, selecciones, partidos } from './datos-mundial.js'
 
 // TODO: importa express y crea tu app.
 //
-//   import express from 'express'
-//   const app = express()
+import express from 'express'
+const app = express()
+app.use(express.json()) // Middleware para leer el cuerpo de los POST
 //
 // Recuerda el middleware que hace falta para leer el cuerpo de los POST,
 // y configura CORS (lo vas a necesitar para el video).
@@ -54,14 +55,103 @@ const PORT = 3000
 
 // Ejemplo para que veas el formato. Bórralo o quédatelo, como prefieras:
 //
-//   app.get('/api/selecciones', (req, res) => {
-//     res.json(selecciones)
-//   })
+//app.get('/api/selecciones', (req, res) => {
+//    res.json(selecciones)
+//})
+app.get('/api/grupos', (req, res) => {
+    res.json(grupos)
+})
+app.get('/api/continentes', (req, res) => {
+    res.json(continentes)
+})
+//app.get('/api/selecciones/:id', (req, res) => {
+//    const id = parseInt(req.params.id)
+//    const seleccion = selecciones.find(s => s.id === id)
+//    if (seleccion) {
+//        res.json(seleccion)
+//    } else {
+//        res.status(404).json({ error: 'Selección no encontrada' })
+//    }
+//})
+
 //
 // A partir de aquí, es tuyo. 🚀
 
 // TODO: levanta el servidor.
-//
-//   app.listen(PORT, () => {
-//     console.log(`⚽ API del Mundial escuchando en http://localhost:${PORT}`)
-//   })
+app.listen(PORT, () => {
+  console.log(`⚽ API del Mundial escuchando en http://localhost:${PORT}`)
+})
+
+// TODO: Rutas con lógica (Punto 3 del enunciado). Por ejemplo, filtrar por continente, campeones, etc.
+
+app.get('/api/selecciones', (req, res) => {
+  
+  const { continente, campeon } = req.query
+  //console.log('Query params:', req.query) // Para depuración: ver qué query string llegó
+
+  //Parto entregando todas las selecciones, y voy filtrando según las querys que se tengan en la query string
+  let resultado = selecciones;
+
+
+  // 1) GET /api/selecciones?continente=Europa
+  //Si existe query de Continente, filtra por continente
+  if (continente) {
+    const continenteObj = continentes.find(c => c.nombre.toLowerCase() === continente.toLowerCase())
+    if (continenteObj) {
+      //Se aplica el filtro sobre el resultado actual, en caso de que el usuario necesite filtrar por continente y por algún otro parámetro
+      resultado = resultado.filter(s => s.continenteId === continenteObj.id)
+    } else {
+      return res.status(404).json({ error: `No se encontró el continente ${continente}` })
+    }
+  }
+
+  // 2) GET /api/selecciones?campeon=true
+  //Si existe query de Campeón, filtra por campeones
+  if (campeon && campeon.toLowerCase() == 'true') {
+    resultado = resultado.filter(s => s.copas.length > 0)
+  } else if (campeon && campeon.toLowerCase() == 'false') {
+    resultado = resultado.filter(s => s.copas.length === 0)
+  } else if (campeon) {
+    return res.status(400).json({
+        error: `El valor '${campeon}' no es válido. Debe ser 'true' o 'false'.`
+    });
+}
+
+if(resultado.length === 0) {
+  return res.status(200).json({ mensaje: 'No se encontraron selecciones que coincidan con los criterios de búsqueda.' })
+}
+
+  //Enviar resultado junto con un status 200
+  res.status(200).json(resultado)
+  
+})
+
+app.get('/api/copas', (req, res) => {
+  // 3) GET /api/copas
+  let resultado = selecciones.flatMap(s => s.copas)
+
+  //Enviar resultado junto con un status 200
+  res.status(200).json(resultado)
+})
+
+app.get('/api/copas/:seleccion', (req, res) => {
+
+  // 4) GET /api/copas/:seleccion
+  const { seleccion } = req.params; //NOTA: Como se trata de un parámetro de ruta, se accede a él mediante req.params, no req.query.
+
+  const seleccionObj = selecciones.find(
+      s => s.nombre.toLowerCase() === seleccion.toLowerCase()
+  );
+
+  if (!seleccionObj) {
+    return res.status(404).json({
+      error: `No se encontró la selección '${seleccion}'.`
+    });
+  }
+
+  res.status(200).json(seleccionObj.copas);
+
+});
+
+// TODO: Rutas de semifinales y final (Punto 4 del enunciado).
+
