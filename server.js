@@ -21,8 +21,8 @@ import express from 'express'
 import cors from 'cors'
 const app = express()
 app.use(cors({
-  methods: ['GET', 'POST', 'PUT', 'DELETE']
-})) // Middleware para habilitar CORS
+  methods: ['GET', 'POST','DELETE']
+}))
 app.use(express.json()) // Middleware para leer el cuerpo de los POST
 //
 // Recuerda el middleware que hace falta para leer el cuerpo de los POST,
@@ -62,12 +62,12 @@ const PORT = 3000
 //app.get('/api/selecciones', (req, res) => {
 //    res.json(selecciones)
 //})
-app.get('/api/grupos', (req, res) => {
-    res.json(grupos)
-})
-app.get('/api/continentes', (req, res) => {
-    res.json(continentes)
-})
+//app.get('/api/grupos', (req, res) => {
+//    res.json(grupos)
+//})
+//app.get('/api/continentes', (req, res) => {
+//    res.json(continentes)
+//})
 //app.get('/api/selecciones/:id', (req, res) => {
 //    const id = parseInt(req.params.id)
 //    const seleccion = selecciones.find(s => s.id === id)
